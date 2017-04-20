@@ -1,62 +1,149 @@
 import React, { Component } from 'react';
-import { Grid, Navbar, Jumbotron, Button } from 'react-bootstrap';
-import logo from './logo.svg';
 import './App.css';
 
-const Home = () => (
-  <div className="App">
-    <div className="App-header">
-      <img src={logo} className="App-logo" alt="logo" />
-      <h2>Welcome to React</h2>
-    </div>
-    <p className="App-intro">
-      To get started, edit <code>src/App.js</code> and save to reload.
-    </p>
-    <Navbar inverse fixedTop>
-          <Grid>
-            <Navbar.Header>
-              <Navbar.Brand>
-                <a href="/">React App</a>
-              </Navbar.Brand>
-              <Navbar.Toggle />
-            </Navbar.Header>
-          </Grid>
-        </Navbar>
-        <Jumbotron>
-          <Grid>
-            <h1>Welcome to React</h1>
-            <p>
-              <Button
-                bsStyle="success"
-                bsSize="large"
-                href="http://react-bootstrap.github.io/components.html"
-                target="_blank">
-                View React Bootstrap Docs
-              </Button>
-            </p>
-          </Grid>
-        </Jumbotron>
-  </div>
-)
+function Square(props) {
+  return (
+    <button className="square" onClick={() => props.onClick()}>
+      {props.value}
+    </button>
+  );
+}
 
-const About = () => <div>About</div>
-
-class App extends Component {
+class Board extends Component {
+  renderSquare(i) {
+    return <Square
+      value={this.props.squares[i]}
+      onClick={() => this.props.onClick(i)} />;
+  }
   render() {
     return (
       <div>
-        {this.renderRoute()}
+        <div className="board-row">
+          {this.renderSquare(0)}
+          {this.renderSquare(1)}
+          {this.renderSquare(2)}
+        </div>
+        <div className="board-row">
+          {this.renderSquare(3)}
+          {this.renderSquare(4)}
+          {this.renderSquare(5)}
+        </div>
+        <div className="board-row">
+          {this.renderSquare(6)}
+          {this.renderSquare(7)}
+          {this.renderSquare(8)}
+        </div>
       </div>
     );
   }
+}
 
-  renderRoute() {
-    switch (window.location.pathname) {
-      case '/': return <Home />;
-      case '/about': return <About />;
-      default: throw new Error('bad route');
+class App extends Component {
+  constructor() {
+    super();
+    this.state = {
+      history: [{
+        squares: Array(9).fill(null)
+      }],
+      stepNumber: 0,
+      xIsNext: true,
+    };
+  }
+  jumpTo(step) {
+    this.setState({
+      stepNumber: step,
+      xIsNext: (step % 2) ? false : true,
+    })
+  }
+  handleClick(i) {
+    const history = this.state.history.slice(0, this.state.stepNumber + 1);
+    const current = history[history.length - 1];
+
+    const squares = current.squares.slice();
+    const winner = calculateWinner(squares);
+    if (winner || squares[i])
+      return;
+    squares[i] = this.state.xIsNext ? 'X' : 'O';
+    this.setState({
+      history: history.concat([{
+        squares: squares,
+      }]),
+      stepNumber: history.length,
+      xIsNext: !this.state.xIsNext,
+    });
+  }
+  render() {
+    const history = this.state.history;
+    const current = history[this.state.stepNumber];
+
+    // update status
+    const isCatsGame = allFull(current.squares);
+    const winner = calculateWinner(current.squares);
+    let status;
+    if (isCatsGame) {
+      status = 'Cats game.';
+    } else if (winner) {
+      status = 'Winner: ' + winner;
+    } else {
+      status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+    }
+
+    // get move history
+    const moves = history.map((step, move) => {
+      const desc = move ?
+        'Move #' + move :
+        'Game start';
+      const liStyle = {
+        'fontWeight': this.state.stepNumber === move ? 'bold' : 'normal',
+      }
+      return (
+        <li key={move}>
+          <a
+            href="#"
+            style={liStyle}
+            onClick={() => this.jumpTo(move)}>{desc}</a>
+        </li>
+      );
+    });
+
+    return (
+      <div className="game">
+        <div className="game-board">
+          <Board
+            squares={current.squares}
+            onClick={(i) => this.handleClick(i)} />
+        </div>
+        <div className="game-info">
+          <div>{status}</div>
+          <ol>{moves}</ol>
+        </div>
+      </div>
+    );
+  }
+}
+
+function calculateWinner(squares) {
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    const [a, b, c] = lines[i];
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a];
     }
   }
+  return null;
+}
+
+function allFull(squares) {
+  return squares.every((i) => i != null);
 }
 
 export default App;
