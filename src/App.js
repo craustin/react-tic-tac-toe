@@ -80,10 +80,11 @@ class App extends Component {
     const isCatsGame = allFull(current.squares);
     const winner = calculateWinner(current.squares);
     let status;
-    if (isCatsGame) {
-      status = 'Cats game.';
-    } else if (winner) {
+
+    if (winner) {
       status = 'Winner: ' + winner;
+    } else if (isCatsGame) {
+      status = 'Cats game.';
     } else {
       status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
     }
